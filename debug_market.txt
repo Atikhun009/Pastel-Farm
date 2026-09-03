@@ -1,0 +1,117 @@
+        function renderMarket() {
+
+            // Seeds
+            document.getElementById('market-seeds').innerHTML = Object.values(SEEDS)
+                .filter(seed => !seed.season || seed.season === state.season)
+                .map(seed => {
+                const isLocked = state.level < seed.unlockLevel;
+                return `
+                <div class="glass p-3 rounded-xl flex justify-between items-center ${isLocked ? 'opacity-60 grayscale' : 'hover:bg-white/60'} transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl bg-white/50 p-2 rounded-lg shadow-sm">${isLocked ? '🔒' : seed.emoji}</span>
+                        <div>
+                            <div class="font-bold text-gray-800">${seed.name} ${isLocked ? `<span class="text-[10px] text-red-500 ml-1">ปลดล็อก Lv.${seed.unlockLevel}</span>` : ''}</div>
+                            <div class="text-xs font-semibold text-gray-500">โตใน ${seed.growTime} วิ • ให้ ${seed.xp} XP</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-gray-500 mr-1">x${quickBuyAmount}</span>
+                        <button onclick="buyItem('seed', '${seed.id}', ${dynamicPrice})" class="relative group glass-btn px-4 py-2 rounded-xl text-sm font-bold shadow-sm whitespace-nowrap ${isLocked || state.gold < finalPrice * quickBuyAmount ? 'bg-gray-100 text-gray-400 opacity-80 cursor-not-allowed' : 'text-green-700 bg-white/80 hover:bg-green-50'}" ${isLocked || state.gold < finalPrice * quickBuyAmount ? 'disabled' : ''}>
+                            <span class=\"${trendColor} mr-1 text-[10px]\">${trendIcon}</span> ${finalPrice * quickBuyAmount} 🪙
+                            ${!isLocked ? `<div class="absolute bottom-full mb-2 right-0 bg-gray-900/90 text-white text-xs px-2 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                ได้ผลผลิต: ${PRODUCTS[seed.produces].name} ${PRODUCTS[seed.produces].emoji}
+                            </div>` : ''}
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+
+            // Animals
+            document.getElementById('market-animals').innerHTML = Object.values(ANIMALS).map(animal => {
+                const isLocked = state.level < animal.unlockLevel;
+                return `
+                <div class="glass p-3 rounded-xl flex justify-between items-center ${isLocked ? 'opacity-60 grayscale' : 'hover:bg-white/60'} transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl bg-white/50 p-2 rounded-lg shadow-sm">${isLocked ? '🔒' : animal.emoji}</span>
+                        <div>
+                            <div class="font-bold text-gray-800">${animal.name} ${isLocked ? `<span class="text-[10px] text-red-500 ml-1">ปลดล็อก Lv.${animal.unlockLevel}</span>` : ''}</div>
+                            <div class="text-xs font-semibold text-gray-500">ผลิตทุก ${animal.cooldown} วิ</div>
+                        </div>
+                    </div>
+                    <button onclick="buyItem('animal', '${animal.id}', ${dynamicPrice})" class="relative group glass-btn px-4 py-2 rounded-xl text-sm font-bold text-green-700 shadow-sm whitespace-nowrap" ${isLocked ? 'disabled' : ''}>
+                        <span class=\"${trendColor} mr-1 text-[10px]\">${trendIcon}</span> ${dynamicPrice} 🪙
+                        ${!isLocked ? `<div class="absolute bottom-full mb-2 right-0 bg-gray-900/90 text-white text-xs px-2 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                            ให้ผลผลิต: ${PRODUCTS[animal.produces].name} ${PRODUCTS[animal.produces].emoji}
+                        </div>` : ''}
+                    </button>
+                </div>
+            `}).join('');
+
+            // Upgrades
+            let upgradesHtml = Object.values(UPGRADES).map(u => {
+                const curLevel = state.upgrades[u.id] || 0;
+                const isMax = curLevel >= u.maxLevel;
+                const nextPrice = Math.floor(u.buyPrice * Math.pow(u.priceMult, curLevel));
+                return `
+                <div class="glass p-3 rounded-xl flex justify-between items-center ${isMax ? 'bg-gray-50/50 opacity-60' : 'hover:bg-white/60'} transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl bg-white/50 p-2 rounded-lg shadow-sm">${u.emoji}</span>
+                        <div>
+                            <div class="font-bold text-gray-800">${u.name} ${curLevel > 0 ? `<span class="text-xs text-purple-600 font-bold ml-1">Lv.${curLevel}</span>` : ''}</div>
+                            <div class="text-xs font-semibold text-gray-500">${u.desc}</div>
+                        </div>
+                    </div>
+                    ${isMax ? `<span class="text-sm font-bold text-gray-500 px-4 py-2">MAX</span>` 
+                    : `<button onclick="buyDynamicUpgrade('${u.id}')" class="relative group glass-btn px-4 py-2 rounded-xl text-sm font-bold text-purple-700 shadow-sm whitespace-nowrap" ${state.gold < nextPrice ? 'disabled' : ''}>
+                        ${nextPrice} 🪙
+                    </button>`}
+                </div>
+                `;
+            }).join('');
+            
+            // Fertilizer
+            upgradesHtml += `
+                <div class="glass p-3 rounded-xl flex justify-between items-center hover:bg-white/60 transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl bg-white/50 p-2 rounded-lg shadow-sm">💩</span>
+                        <div>
+                            <div class="font-bold text-gray-800">ปุ๋ยเร่งโต</div>
+                            <div class="text-xs font-semibold text-gray-500">ลดเวลาโต 50% ทันที</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="buy-qty-fertilizer" min="1" value="1" class="w-12 md:w-16 p-1 text-sm rounded border border-gray-300 text-center bg-white/80">
+                        <button onclick="buyItem('fertilizer', 'fertilizer', 50)" class="relative group glass-btn px-4 py-2 rounded-xl text-sm font-bold text-purple-700 shadow-sm whitespace-nowrap">
+                            50 🪙
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Shop Recipes
+            let recipesHtml = '';
+            Object.values(RECIPES).filter(recipe => !recipe.season || recipe.season === state.season).forEach(recipe => {
+                if (recipe.shopPrice > 0 && !state.inventory.unlockedRecipes.includes(recipe.id)) {
+                    const isLocked = state.level < recipe.unlockLevel;
+                    recipesHtml += `
+                    <div class="glass p-3 rounded-xl flex justify-between items-center ${isLocked ? 'opacity-60 grayscale' : 'hover:bg-white/60'} transition">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl bg-white/50 p-2 rounded-lg shadow-sm">${isLocked ? '🔒' : recipe.emoji}</span>
+                            <div>
+                                <div class="font-bold text-gray-800">สูตร: ${recipe.name} ${isLocked ? `<span class="text-[10px] text-red-500 ml-1">ปลดล็อก Lv.${recipe.unlockLevel}</span>` : ''}</div>
+                                <div class="text-xs font-semibold text-gray-500">ซื้อเพื่อเปิดทำเมนูนี้</div>
+                            </div>
+                        </div>
+                        <button onclick="buyItem('recipe', '${recipe.id}', ${dynamicPrice})" class="glass-btn px-4 py-2 rounded-xl text-sm font-bold text-blue-700 shadow-sm whitespace-nowrap" ${isLocked ? 'disabled' : ''}>
+                            <span class=\"${trendColor} mr-1 text-[10px]\">${trendIcon}</span> ${dynamicPrice} 🪙
+                        </button>
+                    </div>`;
+                }
+            });
+            document.getElementById('market-recipes').innerHTML = recipesHtml;
+
+            document.getElementById('market-upgrades').innerHTML = upgradesHtml;
+        }
+
+        // Generate Inventory Content
+        function renderInventory() {

@@ -1,0 +1,8 @@
+{
+  "name": "Remix Pastel Farm",
+  "description": "A cozy, single-file HTML farming and animal game featuring glassmorphism UI, real-time growing mechanics, and local storage saves.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
